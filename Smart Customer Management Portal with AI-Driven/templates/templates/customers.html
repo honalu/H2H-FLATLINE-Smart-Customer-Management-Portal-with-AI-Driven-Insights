@@ -1,0 +1,17 @@
+{%extends "base.html"%}
+{%block contend%}
+<h2>Customers</h2>
+<p>Table will populate after HONALU runs generate_data.py</p>
+<Table border="1">
+    <tr><th>ID</th><th>Company</th><th>Region</th>Plan</th><th>NPS</th></tr>
+    {% for customer in customers %}
+    <tr>
+        <td>{{ customer['id']}}</td>
+        <td>{{ customer['company_name']}}</td>
+        <td>{{ customer['region']}}</td>
+        <td>{{ customers['plan_tier']}}</td>
+        <td>{{ customers['nps_score']}}</td>
+    </tr>
+    {% endfor %}
+</Table>
+{% endblock %}
