@@ -4,7 +4,8 @@ def get_db():
     conn.row_factory=sqlite=sqlite3.Row
     return conn
 def init_db():
-    conn=get_dbconn.execute('''
+    conn=get_db()
+    conn.execute('''
                             CREATE TABLE IF NOT EXISTS customers(
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             company_name TEXT,

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Customer List</h1>
+    <table border="1">
+        <tr><th>ID</th><th>Company</th><th>Region</th><th>Plan</th><th>NPS</th></tr>
+        {% for customer in customers %}
+        <tr>
+            <td>{{ customer['id'] }}</td>
+            <td>{{ customer['company_name'] }}</td>
+            <td>{{ customer['region'] }}</td>
+            <td>{{ customer['plan_tier'] }}</td>
+            <td>{{ customer['nps_score'] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">No customers found. Database is empty.</td></tr>
+        {% endfor %}
+    </table>
+    <br><a href="/">Back to Dashboard</a>
+</body>
+</html> 
