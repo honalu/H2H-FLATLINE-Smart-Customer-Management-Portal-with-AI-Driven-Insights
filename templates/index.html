@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NetGear Smart Portal</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .card { border: 1px solid #ddd; padding: 15px; margin: 10px; display: inline-block; background: white; border-radius: 5px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #007bff; color: white; }
+        .critical { color: red; font-weight: bold; }
+        .at_risk { color: orange; font-weight: bold; }
+        .healthy { color: green; font-weight: bold; }
+        input[type=text] { width: 500px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .filters a { margin-right: 10px; text-decoration: none; color: #007bff; }
+        .filters a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>NetGear Smart Customer Portal</h1>
+    
+    <!-- Requirement #3: Natural Language Query -->
+    <form method="GET" action="/customers">
+        <input type="text" name="query" placeholder="Try: critical customers in MEA with NPS below 6" value="{{ request.args.get('query', '') }}">
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Requirement #4: Dashboard cards -->
+    <div>
+        <div class="card"><strong>Total:</strong> {{ total }}</div>
+        <div class="card"><strong>Healthy:</strong> {{ healthy }}</div>
+        <div class="card"><strong>At Risk:</strong> {{ at_risk }}</div>
+        <div class="card"><strong>Critical:</strong> {{ critical }}</div>
+    </div>
+
+    <!-- Requirement #2: Filter buttons -->
+    <div class="filters">
+        <strong>Filters:</strong>
+        <a href="/customers">All</a> | 
+        <a href="/customers?health=critical">Critical</a> | 
+        <a href="/customers?health=at_risk">At Risk</a> | 
+        <a href="/customers?health=healthy">Healthy</a>
+    </div>
+
+    <!-- Customer Table -->
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Company</th>
+            <th>Health Score</th>
+            <th>Status</th>
+            <th>NPS</th>
+            <th>Region</th>
+            <th>Actions</th>
+        </tr>
+        {% for customer in customers %}
+        <tr>
+            <td>{{ customer.id }}</td>
+            <td>{{ customer.company_name }}</td>
+            <td>{{ customer.health_score }}</td>
+            <td class="{{ 'critical' if customer.health_score < 40 else 'at_risk' if customer.health_score < 70 else 'healthy' }}">
+                {{ 'Critical' if customer.health_score < 40 else 'At Risk' if customer.health_score < 70 else 'Healthy' }}
+            </td>
+            <td>{{ customer.nps_score }}</td>
+            <td>{{ customer.region }}</td>
+            <td>
+                <a href="/predict/{{ customer.id }}">Predict</a> | 
+                <a href="/email/{{ customer.id }}">Email</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

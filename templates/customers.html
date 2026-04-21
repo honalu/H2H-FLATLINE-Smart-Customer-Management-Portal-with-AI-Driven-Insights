@@ -1,21 +1,96 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .healthy {
+            color: green;
+            font-weight: bold;
+        }
+        .at-risk {
+            color: orange;
+            font-weight: bold;
+        }
+        .critical {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
 <body>
     <h1>Customer List</h1>
-    <table border="1">
-        <tr><th>ID</th><th>Company</th><th>Region</th><th>Plan</th><th>NPS</th></tr>
-        {% for customer in customers %}
-        <tr>
-            <td>{{ customer['id'] }}</td>
-            <td>{{ customer['company_name'] }}</td>
-            <td>{{ customer['region'] }}</td>
-            <td>{{ customer['plan_tier'] }}</td>
-            <td>{{ customer['nps_score'] }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5">No customers found. Database is empty.</td></tr>
-        {% endfor %}
+    {% if active_filter %}
+    <p style="background: #e7f3ff; padding: 10px; border-radius: 5px;">
+        <strong>Filter active:</strong> Showing {{ active_filter }} customers | 
+        <a href="/customers">Clear filter</a>
+    </p>
+{% endif %}
+    <p>Total Customers: {{ customers|length }}</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Company</th>
+                <th>Region</th>
+                <th>Plan</th>
+                <th>NPS</th>
+                <th>Health Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer in customers %}
+            <tr>
+                <td>{{ customer['id'] }}</td>
+                <td><a href="/customer/{{ customer['id'] }}">{{ customer['company_name'] }}</a></td>
+                <td>{{ customer['region'] }}</td>
+                <td>{{ customer['plan_tier'] }}</td>
+                <td>{{ customer['nps_score'] }}</td>
+                <td>
+                    {% if customer['health_score'] >= 60 %}
+                        <span class="healthy">{{ customer['health_score'] }} - Healthy</span>
+                    {% elif customer['health_score'] >= 30 %}
+                        <span class="at-risk">{{ customer['health_score'] }} - At Risk</span>
+                    {% else %}
+                        <span class="critical">{{ customer['health_score'] }} - Critical</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No customers found. Database is empty.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
-    <br><a href="/">Back to Dashboard</a>
 </body>
-</html> 
+</html>
