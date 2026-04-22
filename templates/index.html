@@ -1,76 +1,126 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NetGear Smart Portal</title>
+    <title>NetGear Smart Customer Portal</title>
     <style>
-        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
-        h1 { color: #333; }
-        .card { border: 1px solid #ddd; padding: 15px; margin: 10px; display: inline-block; background: white; border-radius: 5px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; background: white; }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #007bff; color: white; }
-        .critical { color: red; font-weight: bold; }
-        .at_risk { color: orange; font-weight: bold; }
-        .healthy { color: green; font-weight: bold; }
-        input[type=text] { width: 500px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .filters a { margin-right: 10px; text-decoration: none; color: #007bff; }
-        .filters a:hover { text-decoration: underline; }
+        th { background-color: #1a4d8f; color: white; }
+        .Critical { color: red; font-weight: bold; }
+        .AtRisk { color: orange; font-weight: bold; }
+        .Healthy { color: green; font-weight: bold; }
+        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
+        input { padding: 8px; width: 400px; }
     </style>
 </head>
 <body>
     <h1>NetGear Smart Customer Portal</h1>
-    
-    <!-- Requirement #3: Natural Language Query -->
-    <form method="GET" action="/customers">
-        <input type="text" name="query" placeholder="Try: critical customers in MEA with NPS below 6" value="{{ request.args.get('query', '') }}">
+
+    <!-- Search Bar -->
+    <form id="searchForm">
+        <input type="text" id="searchInput" placeholder="Try: critical customers in MEA with NPS below 6">
         <button type="submit">Search</button>
     </form>
 
-    <!-- Requirement #4: Dashboard cards -->
-    <div>
-        <div class="card"><strong>Total:</strong> {{ total }}</div>
-        <div class="card"><strong>Healthy:</strong> {{ healthy }}</div>
-        <div class="card"><strong>At Risk:</strong> {{ at_risk }}</div>
-        <div class="card"><strong>Critical:</strong> {{ critical }}</div>
-    </div>
-
-    <!-- Requirement #2: Filter buttons -->
-    <div class="filters">
-        <strong>Filters:</strong>
-        <a href="/customers">All</a> | 
-        <a href="/customers?health=critical">Critical</a> | 
-        <a href="/customers?health=at_risk">At Risk</a> | 
-        <a href="/customers?health=healthy">Healthy</a>
+    <!-- Stats Counts -->
+    <div style="margin: 15px 0;">
+        <button onclick="filterBy('All')">Total: {{ total }}</button>
+        <button onclick="filterBy('Healthy')">Healthy: {{ healthy }}</button>
+        <button onclick="filterBy('At Risk')">At Risk: {{ at_risk }}</button>
+        <button onclick="filterBy('Critical')">Critical: {{ critical }}</button>
     </div>
 
     <!-- Customer Table -->
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Company</th>
-            <th>Health Score</th>
-            <th>Status</th>
-            <th>NPS</th>
-            <th>Region</th>
-            <th>Actions</th>
-        </tr>
-        {% for customer in customers %}
-        <tr>
-            <td>{{ customer.id }}</td>
-            <td>{{ customer.company_name }}</td>
-            <td>{{ customer.health_score }}</td>
-            <td class="{{ 'critical' if customer.health_score < 40 else 'at_risk' if customer.health_score < 70 else 'healthy' }}">
-                {{ 'Critical' if customer.health_score < 40 else 'At Risk' if customer.health_score < 70 else 'Healthy' }}
-            </td>
-            <td>{{ customer.nps_score }}</td>
-            <td>{{ customer.region }}</td>
-            <td>
-                <a href="/predict/{{ customer.id }}">Predict</a> | 
-                <a href="/email/{{ customer.id }}">Email</a>
-            </td>
-        </tr>
-        {% endfor %}
+    <table id="customerTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Customer Name</th>
+                <th>Company</th>
+                <th>Health Score</th>
+                <th>Status</th>
+                <th>NPS</th>
+                <th>Region</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer in customers %}
+            <tr>
+                <td>{{ customer.id }}</td>
+                <td>{{ customer.customer_name }}</td>
+                <td>{{ customer.company_name }}</td>
+                <td>{{ customer.health_score }}</td>
+                <td class="{{ customer.status.replace(' ', '') }}">{{ customer.status }}</td>
+                <td>{{ customer.nps_score }}</td>
+                <td>{{ customer.region }}</td>
+                <td>
+                    <a href="#" onclick="predict({{ customer.id }}); return false;">Predict</a> | 
+                    <a href="#" onclick="email({{ customer.id }}); return false;">Email</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
+
+<script>
+function filterBy(status) {
+    fetch('/filter/' + encodeURIComponent(status))
+        .then(function(res) { return res.json(); })
+        .then(function(data) { updateTable(data); });
+}
+
+document.getElementById('searchForm').onsubmit = function(e) {
+    e.preventDefault();
+    var query = document.getElementById('searchInput').value;
+    fetch('/search?q=' + encodeURIComponent(query))
+        .then(function(res) { return res.json(); })
+        .then(function(data) { updateTable(data); });
+};
+
+function updateTable(customers) {
+    var tbody = document.querySelector('#customerTable tbody');
+    tbody.innerHTML = '';
+    customers.forEach(function(c) {
+        var status = 'Critical';
+        if (c.health_score >= 70) {
+            status = 'Healthy';
+        } else if (c.health_score >= 40) {
+            status = 'At Risk';
+        }
+        var statusClass = status.replace(' ', '');
+        
+        tbody.innerHTML += '<tr>' +
+            '<td>' + c.id + '</td>' +
+            '<td>' + c.customer_name + '</td>' +
+            '<td>' + c.company_name + '</td>' +
+            '<td>' + c.health_score + '</td>' +
+            '<td class="' + statusClass + '">' + status + '</td>' +
+            '<td>' + c.nps_score + '</td>' +
+            '<td>' + c.region + '</td>' +
+            '<td>' +
+                '<a href="#" onclick="predict(' + c.id + '); return false;">Predict</a> | ' +
+                '<a href="#" onclick="email(' + c.id + '); return false;">Email</a>' +
+            '</td>' +
+        '</tr>';
+    });
+}
+
+function predict(id) {
+    fetch('/predict/' + id)
+        .then(function(res) { return res.json(); })
+        .then(function(data) { 
+            alert('Churn Risk for ' + data.customer_name + ' (' + data.company_name + '): ' + data.churn_risk); 
+        });
+}
+
+function email(id) {
+    fetch('/email/' + id)
+        .then(function(res) { return res.json(); })
+        .then(function(data) { alert(data.email); });
+}
+</script>
+
 </body>
 </html>
