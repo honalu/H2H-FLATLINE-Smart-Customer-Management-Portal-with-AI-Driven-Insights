@@ -1,126 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>NetGear Smart Customer Portal</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #1a4d8f; color: white; }
-        .Critical { color: red; font-weight: bold; }
-        .AtRisk { color: orange; font-weight: bold; }
-        .Healthy { color: green; font-weight: bold; }
-        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
-        input { padding: 8px; width: 400px; }
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; }
+        .search-bar input { padding: 10px; width: 500px; border: 1px solid #ddd; border-radius: 4px; }
+        .filters button { padding: 8px 16px; margin: 10px 5px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+        .actions button, .actions a { margin-right: 4px; padding: 4px 8px; border: 1px solid #007bff; border-radius: 4px; background: white; cursor: pointer; text-decoration: none; color: #007bff; font-size: 12px; }
+        .status-healthy { color: #28a745; font-weight: bold; }
+        .status-at-risk { color: #ffc107; font-weight: bold; }
+        .status-critical { color: #dc3545; font-weight: bold; }
+        .pagination { margin-top: 20px; }
+        .pagination a { padding: 8px 12px; margin: 0 4px; border: 1px solid #ddd; text-decoration: none; }
     </style>
 </head>
 <body>
-    <h1>NetGear Smart Customer Portal</h1>
+    <div class="container">
+        <h1>NetGear Smart Customer Portal — 200 Customers</h1>
+        
+        <div class="search-bar">
+            <input type="text" id="nlqInput" placeholder="Try: critical customers in MEA with NPS below 6 and high usage" value="{{ search or '' }}" onkeypress="if(event.key==='Enter') searchNLQ()">
+        </div>
 
-    <!-- Search Bar -->
-    <form id="searchForm">
-        <input type="text" id="searchInput" placeholder="Try: critical customers in MEA with NPS below 6">
-        <button type="submit">Search</button>
-    </form>
+        <div class="filters">
+            <button onclick="location.href='/'">All ({{ customers.total }})</button>
+            <button onclick="location.href='/?status=Healthy'">Healthy</button>
+            <button onclick="location.href='/?status=At Risk'">At Risk</button>
+            <button onclick="location.href='/?status=Critical'">Critical</button>
+        </div>
 
-    <!-- Stats Counts -->
-    <div style="margin: 15px 0;">
-        <button onclick="filterBy('All')">Total: {{ total }}</button>
-        <button onclick="filterBy('Healthy')">Healthy: {{ healthy }}</button>
-        <button onclick="filterBy('At Risk')">At Risk: {{ at_risk }}</button>
-        <button onclick="filterBy('Critical')">Critical: {{ critical }}</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Company</th>
+                    <th>Region</th>
+                    <th>Plan</th>
+                    <th>Devices</th>
+                    <th>Usage GB</th>
+                    <th>Tickets</th>
+                    <th>NPS</th>
+                    <th>Health</th>
+                    <th>Status</th>
+                    <th>Risk%</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers.items %}
+                <tr>
+                    <td>{{ c.id }}</td>
+                    <td>{{ c.name }}</td>
+                    <td>{{ c.company }}</td>
+                    <td>{{ c.region }}</td>
+                    <td>{{ c.plan_tier }}</td>
+                    <td>{{ c.device_count }}</td>
+                    <td>{{ c.monthly_usage_gb }}</td>
+                    <td>{{ c.tickets_open }}/{{ c.tickets_closed }}</td>
+                    <td>{{ c.nps }}</td>
+                    <td>{{ c.health_score }}</td>
+                    <td class="status-{{ c.status.lower().replace(' ', '-') }}">{{ c.status }}</td>
+                    <td>{{ (c.churn_risk * 100)|round|int }}%</td>
+                    <td class="actions">
+                        <button onclick="updateNPS({{ c.id }})">Update</button>
+                        <a href="#" onclick="predict({{ c.id }})">Predict</a>
+                        <a href="#" onclick="email({{ c.id }})">Email</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            {% if customers.has_prev %}
+                <a href="/?page={{ customers.prev_num }}&status={{ status or '' }}&search={{ search or '' }}">« Prev</a>
+            {% endif %}
+            <span>Page {{ customers.page }} of {{ customers.pages }}</span>
+            {% if customers.has_next %}
+                <a href="/?page={{ customers.next_num }}&status={{ status or '' }}&search={{ search or '' }}">Next »</a>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Customer Table -->
-    <table id="customerTable">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Customer Name</th>
-                <th>Company</th>
-                <th>Health Score</th>
-                <th>Status</th>
-                <th>NPS</th>
-                <th>Region</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for customer in customers %}
-            <tr>
-                <td>{{ customer.id }}</td>
-                <td>{{ customer.customer_name }}</td>
-                <td>{{ customer.company_name }}</td>
-                <td>{{ customer.health_score }}</td>
-                <td class="{{ customer.status.replace(' ', '') }}">{{ customer.status }}</td>
-                <td>{{ customer.nps_score }}</td>
-                <td>{{ customer.region }}</td>
-                <td>
-                    <a href="#" onclick="predict({{ customer.id }}); return false;">Predict</a> | 
-                    <a href="#" onclick="email({{ customer.id }}); return false;">Email</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-<script>
-function filterBy(status) {
-    fetch('/filter/' + encodeURIComponent(status))
-        .then(function(res) { return res.json(); })
-        .then(function(data) { updateTable(data); });
-}
-
-document.getElementById('searchForm').onsubmit = function(e) {
-    e.preventDefault();
-    var query = document.getElementById('searchInput').value;
-    fetch('/search?q=' + encodeURIComponent(query))
-        .then(function(res) { return res.json(); })
-        .then(function(data) { updateTable(data); });
-};
-
-function updateTable(customers) {
-    var tbody = document.querySelector('#customerTable tbody');
-    tbody.innerHTML = '';
-    customers.forEach(function(c) {
-        var status = 'Critical';
-        if (c.health_score >= 70) {
-            status = 'Healthy';
-        } else if (c.health_score >= 40) {
-            status = 'At Risk';
+    <script>
+        function updateNPS(id) {
+            fetch('/update_nps/' + id, {method: 'POST'}).then(() => location.reload());
         }
-        var statusClass = status.replace(' ', '');
-        
-        tbody.innerHTML += '<tr>' +
-            '<td>' + c.id + '</td>' +
-            '<td>' + c.customer_name + '</td>' +
-            '<td>' + c.company_name + '</td>' +
-            '<td>' + c.health_score + '</td>' +
-            '<td class="' + statusClass + '">' + status + '</td>' +
-            '<td>' + c.nps_score + '</td>' +
-            '<td>' + c.region + '</td>' +
-            '<td>' +
-                '<a href="#" onclick="predict(' + c.id + '); return false;">Predict</a> | ' +
-                '<a href="#" onclick="email(' + c.id + '); return false;">Email</a>' +
-            '</td>' +
-        '</tr>';
-    });
-}
-
-function predict(id) {
-    fetch('/predict/' + id)
-        .then(function(res) { return res.json(); })
-        .then(function(data) { 
-            alert('Churn Risk for ' + data.customer_name + ' (' + data.company_name + '): ' + data.churn_risk); 
-        });
-}
-
-function email(id) {
-    fetch('/email/' + id)
-        .then(function(res) { return res.json(); })
-        .then(function(data) { alert(data.email); });
-}
-</script>
-
+        function predict(id) {
+            fetch('/predict/' + id).then(r => r.json()).then(d => {
+                alert(`Churn Risk: ${d.churn_risk}%\nFactors: ${d.factors}`);
+            });
+        }
+        function email(id) {
+            fetch('/email/' + id).then(r => r.json()).then(d => {
+                alert(d.email);
+            });
+        }
+        function searchNLQ() {
+            const q = document.getElementById('nlqInput').value;
+            location.href = '/?search=' + encodeURIComponent(q);
+        }
+    </script>
 </body>
 </html>

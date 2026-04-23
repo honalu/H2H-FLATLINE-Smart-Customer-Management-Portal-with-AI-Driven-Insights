@@ -13,7 +13,7 @@
 
 ### **🚀 Live Demo**
 **Video:** [Add your YouTube link here after recording]  
-**Test Query:** `critical customers in MEA with NPS below 6`
+**Test Query:** `critical customers in MEA with NPS below 6 and high usage`
 
 ### **✅ HACK2HIRE Requirements - 6/6 Complete**
 
