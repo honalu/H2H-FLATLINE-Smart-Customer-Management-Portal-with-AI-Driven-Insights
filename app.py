@@ -60,11 +60,11 @@ with app.app_context():
     if Customer.query.count() == 0:
         for _ in range(200):
             c = Customer(
-                name=fake.company(),
-                contact=fake.name(),
+                company_name=fake.company(),
+                contact_name=fake.name(),
                 email=fake.email(),
                 phone=fake.phone_number(),
-                status=random.choice(['Healthy', 'At Risk', 'Critical'])
+                health_status=random.choice(['Healthy', 'At Risk', 'Critical']),
                 arr=random.randint(5000, 500000),
                 health_score=random.randint(0, 100)
             )
