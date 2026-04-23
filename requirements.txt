@@ -4,3 +4,4 @@ scikit-learn
 faker
 python-dotenv
 gunicorn
+Flask-SQLAlchemy
