@@ -53,6 +53,23 @@ def get_status(health):
    
 with app.app_context():
     db.create_all()
+    # Force seed 200 customers on Render startup
+    from faker import Faker
+    import random
+    fake = Faker()
+    if Customer.query.count() == 0:
+        for _ in range(200):
+            c = Customer(
+                name=fake.company(),
+                contact=fake.name(),
+                email=fake.email(),
+                phone=fake.phone_number(),
+                status=random.choice(['Active', 'At Risk', 'Churned']),
+                arr=random.randint(5000, 500000),
+                health_score=random.randint(0, 100)
+            )
+            db.session.add(c)
+        db.session.commit()
     # Auto-seed on Render since SQLite resets on restart
     from sqlalchemy import inspect
     inspector = inspect(db.engine)
