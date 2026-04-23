@@ -70,6 +70,8 @@ with app.app_context():
             )
             db.session.add(c)
         db.session.commit()
+        return "Seeded 200 customers.Refresh home page."
+        return "Already seeded."
     # Auto-seed on Render since SQLite resets on restart
     from sqlalchemy import inspect
     inspector = inspect(db.engine)
