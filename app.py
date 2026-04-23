@@ -64,7 +64,7 @@ with app.app_context():
                 contact=fake.name(),
                 email=fake.email(),
                 phone=fake.phone_number(),
-                status=random.choice(['Active', 'At Risk', 'Churned']),
+                status=random.choice(['Healthy', 'At Risk', 'Critical']),
                 arr=random.randint(5000, 500000),
                 health_score=random.randint(0, 100)
             )
